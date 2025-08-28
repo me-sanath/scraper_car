@@ -170,46 +170,7 @@ class WorkingSeleniumAdPoster:
             print(f"❌ Error navigating to post ad page: {e}")
             return False
     
-    def fill_form_fields(self):
-        """Fill in the form fields - ONLY title, price, and basic fields first"""
-        print("✏️  Filling basic form fields...")
-        
-        try:
-            # Fill title
-            title_field = self.driver.find_element(By.NAME, "title")
-            title_field.clear()
-            title_field.send_keys(self.ad_details.get('title', ''))
-            print("✅ Filled title")
-            
-            # Fill price
-            price_field = self.driver.find_element(By.NAME, "price")
-            price_field.clear()
-            price_str = self.ad_details.get('price', '0').replace('Tk ', '').replace(',', '')
-            price_field.send_keys(price_str)
-            print("✅ Filled price")
-            
-            # Fill address
-            address_field = self.driver.find_element(By.NAME, "address")
-            address_field.clear()
-            address_field.send_keys("village-kandraji,post-korlakatta,sirsi,uttara kannada ,karnataka\n581318")
-            print("✅ Filled address")
-            
-            # Select location
-            location_select = Select(self.driver.find_element(By.NAME, "location[]"))
-            location_select.select_by_value("33")  # Bangladesh
-            print("✅ Selected location: Bangladesh")
-            
-            # Select tag
-            tag_select = Select(self.driver.find_element(By.NAME, "tagid"))
-            tag_select.select_by_value("1")  # Sale
-            print("✅ Selected tag: Sale")
-            
-            print("✅ Basic form fields filled")
-            return True
-            
-        except Exception as e:
-            print(f"❌ Error filling basic form fields: {e}")
-            return False
+
 
     def select_categories(self):
         """Select all category levels - this should be done before filling other fields"""
@@ -474,11 +435,27 @@ class WorkingSeleniumAdPoster:
             print(f"❌ Error during category selection: {e}")
             return False
 
-    def fill_remaining_fields(self):
-        """Fill in remaining fields after category selection"""
-        print("✏️  Filling remaining form fields...")
+    def fill_all_form_details(self):
+        """Fill in all form details after category selection"""
+        print("✏️  Filling all form details...")
         
         try:
+            # Take snapshot before filling details
+            self.take_snapshot("Before Filling Form Details")
+            
+            # Fill title
+            title_field = self.driver.find_element(By.NAME, "title")
+            title_field.clear()
+            title_field.send_keys(self.ad_details.get('title', ''))
+            print("✅ Filled title")
+            
+            # Fill price
+            price_field = self.driver.find_element(By.NAME, "price")
+            price_field.clear()
+            price_str = self.ad_details.get('price', '0').replace('Tk ', '').replace(',', '')
+            price_field.send_keys(price_str)
+            print("✅ Filled price")
+            
             # Fill description using JavaScript (required due to interactability issues)
             description_script = """
                 var descField = document.querySelector('textarea[name*="description"]');
@@ -490,13 +467,162 @@ class WorkingSeleniumAdPoster:
             self.driver.execute_script(description_script, self.ad_details.get('description', ''))
             print("✅ Filled description")
             
-            # Take snapshot after filling remaining fields
-            self.take_snapshot("After Filling Remaining Fields")
+            # Fill address
+            address_field = self.driver.find_element(By.NAME, "address")
+            address_field.clear()
+            address_field.send_keys("village-kandraji,post-korlakatta,sirsi,uttara kannada ,karnataka\n581318")
+            print("✅ Filled address")
+            
+            # Select location
+            location_select = Select(self.driver.find_element(By.NAME, "location[]"))
+            location_select.select_by_value("33")  # Bangladesh
+            print("✅ Selected location: Bangladesh")
+            
+            # Select tag
+            tag_select = Select(self.driver.find_element(By.NAME, "tagid"))
+            tag_select.select_by_value("1")  # Sale
+            print("✅ Selected tag: Sale")
+            
+            # Now look for vehicle-specific fields that should appear after category selection
+            print("🚗 Looking for vehicle-specific fields...")
+            time.sleep(3)
+            
+            # Take snapshot to see what fields appeared
+            self.take_snapshot("After Looking for Vehicle Fields")
+            
+            # Look for vehicle-specific fields using the correct exf_* names
+            try:
+                # The vehicle fields have names like exf_8, exf_9, exf_10, etc.
+                vehicle_field_names = [
+                    'exf_8',   # Trim / Edition
+                    'exf_9',   # Transmission
+                    'exf_10',  # Registration year
+                    'exf_11',  # Fuel type
+                    'exf_12',  # Kilometers run
+                    'exf_13',  # Model
+                    'exf_14',  # Year of Manufacture
+                    'exf_15',  # Condition
+                    'exf_16',  # Body type
+                    'exf_17',  # Price Final Status
+                    'exf_18',  # Engine capacity
+                    'exf_19',  # Posted on
+                    'exf_20',  # Sellers Name
+                    'exf_21',  # Contact Numbers (textarea)
+                    'exf_22',  # Source Link
+                    'exf_23',  # Year of Production
+                    'exf_24'   # Version
+                ]
+                
+                vehicle_fields_filled = 0
+                for field_name in vehicle_field_names:
+                    try:
+                        field = self.driver.find_element(By.NAME, field_name)
+                        if field:
+                            # Fill based on field name
+                            if field_name == 'exf_8':  # Trim / Edition
+                                field.clear()
+                                field.send_keys('Standard')
+                                print("✅ Filled Trim/Edition: Standard")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_9':  # Transmission
+                                field.clear()
+                                field.send_keys('Automatic')
+                                print("✅ Filled Transmission: Automatic")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_10':  # Registration year
+                                field.clear()
+                                field.send_keys('2020')
+                                print("✅ Filled Registration year: 2020")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_11':  # Fuel type
+                                field.clear()
+                                field.send_keys('Petrol')
+                                print("✅ Filled Fuel type: Petrol")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_12':  # Kilometers run
+                                field.clear()
+                                field.send_keys('50000')
+                                print("✅ Filled Kilometers run: 50000")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_13':  # Model
+                                field.clear()
+                                field.send_keys('Sedan')
+                                print("✅ Filled Model: Sedan")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_14':  # Year of Manufacture
+                                field.clear()
+                                field.send_keys('2005')
+                                print("✅ Filled Year of Manufacture: 2005")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_15':  # Condition
+                                field.clear()
+                                field.send_keys('Good')
+                                print("✅ Filled Condition: Good")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_16':  # Body type
+                                field.clear()
+                                field.send_keys('Sedan')
+                                print("✅ Filled Body type: Sedan")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_17':  # Price Final Status
+                                field.clear()
+                                field.send_keys('Negotiable')
+                                print("✅ Filled Price Final Status: Negotiable")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_18':  # Engine capacity
+                                field.clear()
+                                field.send_keys('1.5L')
+                                print("✅ Filled Engine capacity: 1.5L")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_19':  # Posted on
+                                field.clear()
+                                field.send_keys('2024')
+                                print("✅ Filled Posted on: 2024")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_20':  # Sellers Name
+                                field.clear()
+                                field.send_keys('Car Seller')
+                                print("✅ Filled Sellers Name: Car Seller")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_21':  # Contact Numbers (textarea)
+                                field.clear()
+                                field.send_keys('+880 1234567890')
+                                print("✅ Filled Contact Numbers: +880 1234567890")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_22':  # Source Link
+                                field.clear()
+                                field.send_keys('https://example.com')
+                                print("✅ Filled Source Link: https://example.com")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_23':  # Year of Production
+                                field.clear()
+                                field.send_keys('2005')
+                                print("✅ Filled Year of Production: 2005")
+                                vehicle_fields_filled += 1
+                            elif field_name == 'exf_24':  # Version
+                                field.clear()
+                                field.send_keys('F')
+                                print("✅ Filled Version: F")
+                                vehicle_fields_filled += 1
+                    except Exception as e:
+                        print(f"⚠️  Error filling field {field_name}: {e}")
+                        continue
+                
+                if vehicle_fields_filled > 0:
+                    print(f"✅ Successfully filled {vehicle_fields_filled} vehicle-specific fields")
+                else:
+                    print("⚠️  No vehicle-specific fields were filled")
+                    
+            except Exception as e:
+                print(f"⚠️  Error handling vehicle fields: {e}")
+            
+            # Take snapshot after filling all details
+            self.take_snapshot("After Filling All Form Details")
             
             return True
             
         except Exception as e:
-            print(f"❌ Error filling remaining fields: {e}")
+            print(f"❌ Error filling form details: {e}")
             return False
     
     def upload_images(self):
@@ -563,6 +689,75 @@ class WorkingSeleniumAdPoster:
             print(f"❌ Error uploading images: {e}")
             return False
 
+    def agree_to_terms(self):
+        """Agree to terms and conditions"""
+        print("📋 Looking for terms and conditions checkbox...")
+        
+        try:
+            # Take snapshot before agreeing to terms
+            self.take_snapshot("Before Agreeing to Terms")
+            
+            # Look for privacy/terms checkbox
+            privacy_checkbox = None
+            
+            # Strategy 1: Look for privacy checkbox by name
+            try:
+                privacy_checkbox = self.driver.find_element(By.NAME, "privacy[]")
+                print("✅ Found privacy checkbox by name")
+            except:
+                pass
+            
+            # Strategy 2: Look for privacy checkbox by ID
+            if not privacy_checkbox:
+                try:
+                    privacy_checkbox = self.driver.find_element(By.ID, "privacy")
+                    print("✅ Found privacy checkbox by ID")
+                except:
+                    pass
+            
+            # Strategy 3: Look for any checkbox with privacy-related text
+            if not privacy_checkbox:
+                try:
+                    checkboxes = self.driver.find_elements(By.CSS_SELECTOR, "input[type='checkbox']")
+                    for checkbox in checkboxes:
+                        # Look for nearby text that mentions privacy or terms
+                        try:
+                            parent = checkbox.find_element(By.XPATH, "./..")
+                            parent_text = parent.text.lower()
+                            if "privacy" in parent_text or "terms" in parent_text or "agree" in parent_text:
+                                privacy_checkbox = checkbox
+                                print("✅ Found privacy checkbox by nearby text")
+                                break
+                        except:
+                            continue
+                except:
+                    pass
+            
+            if privacy_checkbox:
+                # Check if already checked
+                if not privacy_checkbox.is_selected():
+                    # Scroll to checkbox to ensure it's visible
+                    self.driver.execute_script("arguments[0].scrollIntoView(true);", privacy_checkbox)
+                    time.sleep(1)
+                    
+                    # Click the checkbox
+                    privacy_checkbox.click()
+                    print("✅ Agreed to terms and conditions")
+                else:
+                    print("✅ Terms and conditions already agreed to")
+                
+                # Take snapshot after agreeing to terms
+                self.take_snapshot("After Agreeing to Terms")
+                return True
+            else:
+                print("⚠️  No terms and conditions checkbox found - continuing anyway")
+                return True
+                
+        except Exception as e:
+            print(f"⚠️  Error agreeing to terms: {e}")
+            print("Continuing anyway...")
+            return True
+
     def verify_ad_posted(self):
         """Verify that the ad was posted successfully by checking user's ads page"""
         print("🔍 Verifying ad was posted successfully...")
@@ -615,131 +810,7 @@ class WorkingSeleniumAdPoster:
             print(f"❌ Error verifying ad: {e}")
             return False
 
-    def handle_vehicle_specific_fields(self):
-        """Handle vehicle-specific fields that appear after category selection"""
-        print("🚗 Handling vehicle-specific fields...")
-        
-        try:
-            # First verify we're on the right category path
-            print("🔍 Verifying category selection...")
-            try:
-                category_select = self.driver.find_element(By.NAME, "category[]")
-                selected_category = Select(category_select).first_selected_option.text
-                print(f"✅ Main category: {selected_category}")
-                
-                # Check if subcategories are present
-                subcategory_selects = self.driver.find_elements(By.NAME, "subcategory[]")
-                if subcategory_selects:
-                    for i, subcat_select in enumerate(subcategory_selects):
-                        try:
-                            selected_subcat = Select(subcat_select).first_selected_option.text
-                            print(f"✅ Subcategory {i+1}: {selected_subcat}")
-                        except:
-                            print(f"⚠️  Subcategory {i+1}: Not selected")
-                else:
-                    print("⚠️  No subcategories found")
-                    
-            except Exception as e:
-                print(f"⚠️  Error checking categories: {e}")
-            
-            # Wait for dynamic fields to load
-            time.sleep(3)
-            
-            # Look for common vehicle fields
-            vehicle_field_selectors = [
-                "input[name*='trim']",
-                "input[name*='transmission']", 
-                "input[name*='year']",
-                "input[name*='mileage']",
-                "input[name*='engine']",
-                "input[name*='fuel']",
-                "input[name*='color']",
-                "input[name*='model']",
-                "input[name*='brand']",
-                "select[name*='trim']",
-                "select[name*='transmission']",
-                "select[name*='fuel']"
-            ]
-            
-            vehicle_fields = []
-            for selector in vehicle_field_selectors:
-                fields = self.driver.find_elements(By.CSS_SELECTOR, selector)
-                vehicle_fields.extend(fields)
-            
-            if vehicle_fields:
-                print(f"✅ Found {len(vehicle_fields)} vehicle-specific fields")
-                
-                # Fill in vehicle details
-                for field in vehicle_fields:
-                    try:
-                        field_name = field.get_attribute('name', '').lower()
-                        field_type = field.tag_name
-                        
-                        if field_type == 'input':
-                            if 'year' in field_name:
-                                field.clear()
-                                field.send_keys('2020')
-                                print("✅ Filled year: 2020")
-                            elif 'mileage' in field_name:
-                                field.clear()
-                                field.send_keys('50000')
-                                print("✅ Filled mileage: 50000")
-                            elif 'fuel' in field_name:
-                                field.clear()
-                                field.send_keys('Petrol')
-                                print("✅ Filled fuel type: Petrol")
-                            elif 'color' in field_name:
-                                field.clear()
-                                field.send_keys('White')
-                                print("✅ Filled color: White")
-                            elif 'engine' in field_name:
-                                field.clear()
-                                field.send_keys('1.5L')
-                                print("✅ Filled engine: 1.5L")
-                            elif 'model' in field_name:
-                                field.clear()
-                                field.send_keys('Sedan')
-                                print("✅ Filled model: Sedan")
-                            elif 'brand' in field_name:
-                                field.clear()
-                                field.send_keys('Toyota')
-                                print("✅ Filled brand: Toyota")
-                        
-                        elif field_type == 'select':
-                            select_field = Select(field)
-                            if 'transmission' in field_name:
-                                # Try to select automatic
-                                for option in select_field.options:
-                                    if 'automatic' in option.text.lower():
-                                        select_field.select_by_visible_text(option.text)
-                                        print(f"✅ Selected transmission: {option.text}")
-                                        break
-                                else:
-                                    select_field.select_by_index(0)
-                                    print(f"✅ Selected first transmission option: {select_field.first_selected_option.text}")
-                            elif 'fuel' in field_name:
-                                # Try to select petrol
-                                for option in select_field.options:
-                                    if 'petrol' in option.text.lower():
-                                        select_field.select_by_visible_text(option.text)
-                                        print(f"✅ Selected fuel: {option.text}")
-                                        break
-                                else:
-                                    select_field.select_by_index(0)
-                                    print(f"✅ Selected first fuel option: {select_field.first_selected_option.text}")
-                    
-                    except Exception as e:
-                        print(f"⚠️  Error filling field {field_name}: {e}")
-                        continue
-                
-                return True
-            else:
-                print("⚠️  No vehicle-specific fields found")
-                return False
-                
-        except Exception as e:
-            print(f"❌ Error handling vehicle fields: {e}")
-            return False
+
     
     def submit_form(self):
         """Submit the form"""
@@ -752,41 +823,47 @@ class WorkingSeleniumAdPoster:
             # Find submit button - try multiple strategies
             submit_button = None
             
-            # Strategy 1: Look for input[type='submit']
+            # Strategy 1: Look specifically for the "Post Ad" button (avoid logout button)
             try:
-                submit_button = self.driver.find_element(By.CSS_SELECTOR, "input[type='submit']")
-                print("✅ Found submit button by input[type='submit']")
+                submit_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit'][onclick*='valJomclAddForm']")
+                print("✅ Found Post Ad button by specific selector")
             except:
                 pass
             
-            # Strategy 2: Look for button[type='submit']
+            # Strategy 2: Look for button with "Post Ad" text
             if not submit_button:
                 try:
-                    submit_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
-                    print("✅ Found submit button by button[type='submit']")
-                except:
-                    pass
-            
-            # Strategy 3: Look for any button or input with submit-related text
-            if not submit_button:
-                try:
-                    submit_elements = self.driver.find_elements(By.CSS_SELECTOR, "input, button")
+                    submit_elements = self.driver.find_elements(By.CSS_SELECTOR, "button[type='submit']")
                     for element in submit_elements:
-                        element_text = element.get_attribute('value') or element.text or ''
-                        if any(word in element_text.lower() for word in ['submit', 'post', 'save', 'publish']):
+                        element_text = element.text.lower()
+                        if 'post ad' in element_text or 'post' in element_text:
                             submit_button = element
-                            print(f"✅ Found submit button by text: {element_text}")
+                            print(f"✅ Found Post Ad button by text: {element.text}")
                             break
                 except:
                     pass
             
-            # Strategy 4: Look for any element with submit in name or id
+            # Strategy 3: Look for button with success class (Post Ad button has btn-success)
             if not submit_button:
                 try:
-                    submit_elements = self.driver.find_elements(By.CSS_SELECTOR, "[name*='submit'], [id*='submit'], [class*='submit']")
-                    if submit_elements:
-                        submit_button = submit_elements[0]
-                        print(f"✅ Found submit button by name/id/class: {submit_button.get_attribute('name') or submit_button.get_attribute('id')}")
+                    submit_button = self.driver.find_element(By.CSS_SELECTOR, "button.btn-success[type='submit']")
+                    print("✅ Found Post Ad button by btn-success class")
+                except:
+                    pass
+            
+            # Strategy 4: Look for any button with submit type (fallback)
+            if not submit_button:
+                try:
+                    submit_elements = self.driver.find_elements(By.CSS_SELECTOR, "button[type='submit']")
+                    # Filter out logout button by checking value/text
+                    for element in submit_elements:
+                        element_text = element.text.lower()
+                        element_value = element.get_attribute('value', '').lower()
+                        # Skip logout button
+                        if 'log out' not in element_text and 'logout' not in element_value:
+                            submit_button = element
+                            print(f"✅ Found submit button (excluding logout): {element.text}")
+                            break
                 except:
                     pass
             
@@ -881,27 +958,27 @@ class WorkingSeleniumAdPoster:
                 print("❌ Failed to navigate to post ad page. Exiting.")
                 return False
             
-            # Step 5: Fill basic form fields (title, price, address, location, tag)
-            if not self.fill_form_fields():
-                print("❌ Failed to fill basic form fields. Exiting.")
-                return False
-            
-            # Step 6: Select all category levels
+            # Step 5: Select all category levels FIRST
+            print("\n🏷️  === Starting Category Selection Process ===")
             if not self.select_categories():
                 print("❌ Failed to select categories. Exiting.")
                 return False
             
-            # Step 7: Fill remaining fields (description) after category selection
-            if not self.fill_remaining_fields():
-                print("❌ Failed to fill remaining fields. Exiting.")
+            # Step 6: Fill all form details after category selection
+            print("\n✏️  === Filling All Form Details ===")
+            if not self.fill_all_form_details():
+                print("❌ Failed to fill form details. Exiting.")
                 return False
             
-            # Step 8: Handle vehicle-specific fields
-            print("\n🚗 === Handling Vehicle-Specific Fields ===")
-            self.handle_vehicle_specific_fields()
-            
-            # Step 9: Upload images
+            # Step 7: Upload images
+            print("\n🖼️  === Uploading Images ===")
             self.upload_images()
+            
+            # Step 8: Agree to terms and conditions
+            print("\n📋 === Agreeing to Terms and Conditions ===")
+            if not self.agree_to_terms():
+                print("❌ Failed to agree to terms. Exiting.")
+                return False
             
             # Step 7: Submit form
             if not self.submit_form():
