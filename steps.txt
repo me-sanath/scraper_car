@@ -1,0 +1,16 @@
+=== STEPS TAKEN DURING SELENIUM AD POSTING ===
+
+1. === Starting Complete Selenium Ad Posting Process ===
+2. Setting up Chrome driver with debugging options
+3. Chrome driver setup complete
+4. Loading ad details from ad_details.json
+5. Loaded ad details for: Toyota Premio F 2005
+6. Attempting to login to the website
+7. Form submitted automatically
+8. Navigating to post ad page
+9. Analyzing form structure before filling
+10. Filling basic form fields
+11. Filled title: Toyota Premio F 2005
+12. Filled price: 1550000
+13. Failed to fill basic form fields. Exiting.
+14. Saving documentation to files

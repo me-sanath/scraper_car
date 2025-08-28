@@ -1,0 +1,114 @@
+=== KEY FINDINGS FROM IMPROVED SELENIUM AD POSTING ===
+
+1. Found submit button with selector: button[type='submit']
+2. Login appears successful - redirected away from login page
+3. Current URL: https://november2024version01.dicewebfreelancers.com/index.php/post-free-ad/user/add
+4. Page title: Post Ad
+5. Successfully navigated to post ad page
+6. Found 3 forms on the post ad page
+7. Form 1: action=https://november2024version01.dicewebfreelancers.com/index.php/post-free-ad, method=post, id=login-form, class=form-vertical
+8. Form 1 has 5 total inputs
+9. Form 1 has 0 text inputs
+10. Form 1 has 0 textarea inputs
+11. Form 1 has 0 select inputs
+12. Form 1 has 0 file upload inputs
+13. Form 1 has 4 hidden inputs
+14.   Hidden input 1: name=option, id=, value=com_users
+15.   Hidden input 2: name=task, id=, value=user.logout
+16.   Hidden input 3: name=return, id=, value=aW5kZXgucGhwP0l0ZW1pZD0xMDE=
+17.   Hidden input 4: name=9fc2c7e2371efd98fdd0291755dec149, id=, value=1
+18. Form 2: action=https://november2024version01.dicewebfreelancers.com/index.php/post-free-ad/user/save, method=post, id=jomclForm, class=jomcl-form-horizontal
+19. Form 2 has 15 total inputs
+20. Form 2 has 3 text inputs
+21. Form 2 has 2 textarea inputs
+22. Form 2 has 4 select inputs
+23. Form 2 has 1 file upload inputs
+24. Form 2 has 9 hidden inputs
+25.   Text input 1: name=title, id=title, type=text, placeholder=, value=, disabled=None, readonly=None
+26.   Text input 2: name=price, id=, type=text, placeholder=0.00, value=, disabled=None, readonly=None
+27.   Text input 3: name=topaddays, id=topaddays, type=text, placeholder= 0, value=, disabled=None, readonly=None
+28.   Textarea 1: name=description, id=description, placeholder=, value=	, disabled=None, readonly=None
+29.   Textarea 2: name=address, id=, placeholder=, value=village-kandraji,post-korlakatta,sirsi,uttara kannada ,karnataka
+581318, disabled=None, readonly=None
+30.   Select 1: name=category[], id=category, disabled=None
+31.     Select 1 has 7 options
+32.       Option 1: value=-1, text=- Select a category -, selected=true
+33.       Option 2: value=1, text=For Sale, selected=None
+34.       Option 3: value=6, text=Vehicles, selected=None
+35.       Option 4: value=11, text=Services, selected=None
+36.       Option 5: value=16, text=Real Estate, selected=None
+37.   Select 2: name=currency, id=currency, disabled=None
+38.     Select 2 has 4 options
+39.       Option 1: value=-1, text=- -- -, selected=None
+40.       Option 2: value=USD, text=USD, selected=true
+41.       Option 3: value=AUD, text=AUD, selected=None
+42.       Option 4: value=TK, text=TK, selected=None
+43.   Select 3: name=tagid, id=tagid, disabled=None
+44.     Select 3 has 2 options
+45.       Option 1: value=-1, text=- Select a tag -, selected=true
+46.       Option 2: value=1, text=Sale, selected=None
+47.   Select 4: name=location[], id=location, disabled=None
+48.     Select 4 has 5 options
+49.       Option 1: value=0, text=- Select a country -, selected=true
+50.       Option 2: value=1, text=United States, selected=None
+51.       Option 3: value=33, text=Bangladesh, selected=None
+52.       Option 4: value=34, text=Newzeland, selected=None
+53.       Option 5: value=35, text=Australia, selected=None
+54.   File input 1: name=images[], id=ajax-upload-id-1756409194636, accept=image/*, multiple=true, disabled=None
+55.   Hidden input 1: name=mode, id=, value=new
+56.   Hidden input 2: name=extImages, id=, value=
+57.   Hidden input 3: name=userid, id=, value=4340
+58.   Hidden input 4: name=, id=paycurrency, value=USD
+59.   Hidden input 5: name=id, id=jomcl-post-id, value=678948
+60.   Hidden input 6: name=latitude, id=latitude, value=
+61.   Hidden input 7: name=langtitude, id=langtitude, value=
+62.   Hidden input 8: name=defLocation, id=defLocation, value=village-kandraji,post-korlakatta,sirsi,uttara kannada ,karnataka
+581318
+63.   Hidden input 9: name=9fc2c7e2371efd98fdd0291755dec149, id=, value=1
+64. Form 3: action=https://november2024version01.dicewebfreelancers.com/index.php?option=com_jomclassifieds&task=upload&format=raw&id=678948, method=post, id=, class=
+65. Form 3 has 1 total inputs
+66. Form 3 has 0 text inputs
+67. Form 3 has 0 textarea inputs
+68. Form 3 has 0 select inputs
+69. Form 3 has 1 file upload inputs
+70. Form 3 has 0 hidden inputs
+71.   File input 1: name=images[], id=ajax-upload-id-1756409194636, accept=image/*, multiple=true, disabled=None
+72. Description field found but not interactable
+73. Description field found by ID but not interactable
+74. Description field found by CSS but not interactable
+75. Could not fill description field - will try JavaScript approach
+76. Could not select currency: Message: no such element: Unable to locate element: {"method":"css selector","selector":"[name="currency"]"}
+  (Session info: chrome=139.0.7258.140); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#nosuchelementexception
+Stacktrace:
+0   chromedriver                        0x000000010adaf668 chromedriver + 5928552
+1   chromedriver                        0x000000010ada6c0a chromedriver + 5893130
+2   chromedriver                        0x000000010a870e00 chromedriver + 429568
+3   chromedriver                        0x000000010a8c2ff4 chromedriver + 765940
+4   chromedriver                        0x000000010a8c3211 chromedriver + 766481
+5   chromedriver                        0x000000010a912e94 chromedriver + 1093268
+6   chromedriver                        0x000000010a8e908d chromedriver + 921741
+7   chromedriver                        0x000000010a9101d4 chromedriver + 1081812
+8   chromedriver                        0x000000010a8e8e33 chromedriver + 921139
+9   chromedriver                        0x000000010a8b537b chromedriver + 709499
+10  chromedriver                        0x000000010a8b6061 chromedriver + 712801
+11  chromedriver                        0x000000010ad6d0e0 chromedriver + 5656800
+12  chromedriver                        0x000000010ad70fa4 chromedriver + 5672868
+13  chromedriver                        0x000000010ad48052 chromedriver + 5505106
+14  chromedriver                        0x000000010ad71a4f chromedriver + 5675599
+15  chromedriver                        0x000000010ad37004 chromedriver + 5435396
+16  chromedriver                        0x000000010ad93d88 chromedriver + 5815688
+17  chromedriver                        0x000000010ad93f50 chromedriver + 5816144
+18  chromedriver                        0x000000010ada67e1 chromedriver + 5892065
+19  libsystem_pthread.dylib             0x00007ff819eb8e59 _pthread_start + 115
+20  libsystem_pthread.dylib             0x00007ff819eb4857 thread_start + 15
+
+77. Found 1 file upload inputs
+78. Using file input: name=images[], id=ajax-upload-id-1756409194636
+79. File input is not interactable
+80. Found submit button with selector: input[type='submit']
+81. After submission - URL: https://november2024version01.dicewebfreelancers.com/index.php
+82. After submission - Title: All Categories
+83. SUCCESS: Ad appears to have been posted successfully!
+84. Found 'success' in result page - indicates success
+85. Found 'error' in result page - indicates error
+86. Found 'login' in result page - indicates login
