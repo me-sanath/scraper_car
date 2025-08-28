@@ -11,7 +11,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import Select
 from dotenv import load_dotenv
 import requests
-from datetime import datetime
+
 
 load_dotenv()
 
@@ -24,11 +24,7 @@ class WorkingSeleniumAdPoster:
     def __init__(self):
         self.driver = None
         self.ad_details = None
-        self.debug_dir = "debug_snapshots"
-        
-        # Create debug directory if it doesn't exist
-        if not os.path.exists(self.debug_dir):
-            os.makedirs(self.debug_dir)
+        self.cookies_file = "session_cookies.json"
         
     def setup_driver(self):
         """Setup Chrome driver with optimal settings"""
@@ -45,43 +41,88 @@ class WorkingSeleniumAdPoster:
         # Remove webdriver property
         self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
         
-        print("✅ Chrome driver setup complete")
+        print("Chrome driver ready")
         
-    def take_snapshot(self, stage_name):
-        """Take a snapshot of the current page for debugging"""
+    def save_cookies(self):
+        """Save current session cookies to file"""
         try:
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            stage_clean = stage_name.replace(" ", "_").replace(":", "").lower()
-            
-            # Save HTML
-            html_filename = f"{self.debug_dir}/{timestamp}_{stage_clean}.html"
-            with open(html_filename, 'w', encoding='utf-8') as f:
-                f.write(self.driver.page_source)
-            print(f"📸 HTML snapshot saved: {html_filename}")
-            
-            # Save screenshot
-            screenshot_filename = f"{self.debug_dir}/{timestamp}_{stage_clean}.png"
-            self.driver.save_screenshot(screenshot_filename)
-            print(f"📸 Screenshot saved: {screenshot_filename}")
-            
-            # Save current URL and page title
-            info_filename = f"{self.debug_dir}/{timestamp}_{stage_clean}_info.txt"
-            with open(info_filename, 'w', encoding='utf-8') as f:
-                f.write(f"URL: {self.driver.current_url}\n")
-                f.write(f"Title: {self.driver.title}\n")
-                f.write(f"Stage: {stage_name}\n")
-                f.write(f"Timestamp: {datetime.now().isoformat()}\n")
-            print(f"📸 Page info saved: {info_filename}")
-            
+            cookies = self.driver.get_cookies()
+            with open(self.cookies_file, 'w') as f:
+                json.dump(cookies, f)
+            print("Session cookies saved")
         except Exception as e:
-            print(f"⚠️  Error taking snapshot: {e}")
+            print(f"Error saving cookies: {e}")
+    
+    def load_cookies(self):
+        """Load and apply saved session cookies"""
+        try:
+            if os.path.exists(self.cookies_file):
+                with open(self.cookies_file, 'r') as f:
+                    cookies = json.load(f)
+                
+                # Go to the site first (cookies need a domain context)
+                self.driver.get("https://november2024version01.dicewebfreelancers.com/")
+                
+                # Apply cookies
+                for cookie in cookies:
+                    try:
+                        self.driver.add_cookie(cookie)
+                    except Exception as e:
+                        continue
+                
+                print("Session cookies loaded")
+                return True
+            return False
+        except Exception as e:
+            print(f"Error loading cookies: {e}")
+            return False
+    
+    def check_login_status(self):
+        """Check if we're still logged in by visiting a protected page"""
+        try:
+            self.driver.get("https://november2024version01.dicewebfreelancers.com/index.php/post-free-ad/user")
+            time.sleep(3)
+            
+            # Check if we're redirected to login page
+            if "login" in self.driver.current_url.lower():
+                return False
+            return True
+        except Exception as e:
+            return False
+    
+    def try_session_reuse(self):
+        """Try to reuse saved session, fallback to login if needed"""
+        print("Checking for saved session...")
+        
+        # Try to load saved cookies
+        if self.load_cookies():
+            # Check if the session is still valid
+            if self.check_login_status():
+                print("✅ Session reused successfully")
+                return True
+            else:
+                print("Saved session expired, logging in...")
+                # Clear expired cookies
+                self.clear_expired_cookies()
+        
+        # Fallback to normal login
+        return self.login_to_site()
+    
+    def clear_expired_cookies(self):
+        """Remove expired session cookies"""
+        try:
+            if os.path.exists(self.cookies_file):
+                os.remove(self.cookies_file)
+                print("Expired cookies cleared")
+        except Exception as e:
+            print(f"Error clearing cookies: {e}")
         
     def load_ad_details(self):
         """Load ad details from JSON file"""
         try:
             with open('ad_details.json', 'r', encoding='utf-8') as f:
                 self.ad_details = json.load(f)
-                print(f"✅ Loaded ad details for: {self.ad_details.get('title', 'Unknown')}")
+                print(f"Loaded: {self.ad_details.get('title', 'Unknown')}")
                 return True
         except Exception as e:
             print(f"❌ Error loading ad details: {e}")
@@ -89,15 +130,14 @@ class WorkingSeleniumAdPoster:
     
     def login_to_site(self):
         """Login to the website"""
-        print("🔐 Attempting to login...")
+        print("Logging in...")
         
         try:
             # Go to login page
             self.driver.get("https://november2024version01.dicewebfreelancers.com/index.php/login?task=user.login")
             time.sleep(3)
             
-            # Take snapshot of login page
-            self.take_snapshot("Login Page Loaded")
+
             
             # Wait for login form
             username_field = WebDriverWait(self.driver, 10).until(
@@ -110,7 +150,7 @@ class WorkingSeleniumAdPoster:
             password = os.getenv('PASSWORD')
             
             if not username or not password:
-                print("⚠️  No credentials found in environment - manual login required")
+                print("No credentials found - manual login required")
                 input("Please login manually in the browser and press Enter when ready...")
                 return True
             
@@ -120,8 +160,7 @@ class WorkingSeleniumAdPoster:
             password_field.clear()
             password_field.send_keys(password)
             
-            # Take snapshot before submission
-            self.take_snapshot("Login Form Filled")
+
             
             # Find and click submit button
             submit_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
@@ -130,13 +169,12 @@ class WorkingSeleniumAdPoster:
             # Wait for redirect
             time.sleep(5)
             
-            # Take snapshot after submission
-            self.take_snapshot("After Login Submission")
-            
             # Check if login was successful
             current_url = self.driver.current_url
             if "login" not in current_url.lower():
-                print("✅ Login successful")
+                print("Login successful")
+                # Save cookies for future use
+                self.save_cookies()
                 return True
             else:
                 print("❌ Login failed")
@@ -149,21 +187,21 @@ class WorkingSeleniumAdPoster:
     
     def navigate_to_post_ad_page(self):
         """Navigate to the post ad page"""
-        print("📝 Navigating to post ad page...")
+        print("Navigating to post ad page...")
         
         try:
             self.driver.get("https://november2024version01.dicewebfreelancers.com/index.php/post-free-ad/user/add")
             time.sleep(5)
             
             # Take snapshot of post ad page
-            self.take_snapshot("Post Ad Page Loaded")
+    
             
             current_url = self.driver.current_url
             if "login" in current_url.lower():
                 print("❌ Still on login page - authentication required")
                 return False
             else:
-                print("✅ Successfully navigated to post ad page")
+                print("Post ad page loaded")
                 return True
                 
         except Exception as e:
@@ -174,7 +212,7 @@ class WorkingSeleniumAdPoster:
 
     def select_categories(self):
         """Select all category levels - this should be done before filling other fields"""
-        print("🏷️  === Starting Category Selection Process ===")
+        print("Selecting categories...")
         
         try:
             # Select main category (Vehicles)
@@ -210,7 +248,7 @@ class WorkingSeleniumAdPoster:
             print("✅ Selected main category: Vehicles")
             
             # Take snapshot after main category selection
-            self.take_snapshot("After Main Category Selection")
+    
             
             # Wait for subcategory to appear and select Cars - Parts
             print("🚗 Waiting for subcategory to appear...")
@@ -274,7 +312,7 @@ class WorkingSeleniumAdPoster:
                 
                 if subcategory_select:
                     # Take snapshot before subcategory selection
-                    self.take_snapshot("Before Subcategory Selection")
+            
                     
                     # Select Cars - Parts
                     subcategory_select = Select(subcategory_select)
@@ -295,14 +333,14 @@ class WorkingSeleniumAdPoster:
                         print(f"✅ Selected first subcategory option: {subcategory_select.first_selected_option.text}")
                     
                     # Take snapshot after subcategory selection
-                    self.take_snapshot("After Subcategory Selection")
+            
                     
                     # Wait for third category dropdown to appear after selecting "Cars - Parts"
                     print("🔄 Waiting for third category dropdown to appear...")
                     time.sleep(5)  # Wait longer for JavaScript to load
                     
                     # Take snapshot to see what appeared
-                    self.take_snapshot("After Waiting for Third Category")
+            
                     
                     # Look for third category level
                     try:
@@ -347,7 +385,7 @@ class WorkingSeleniumAdPoster:
                         
                         if third_category_select:
                             # Take snapshot before third category selection
-                            self.take_snapshot("Before Third Category Selection")
+                    
                             
                             third_category_select = Select(third_category_select)
                             print(f"📋 Available third category options: {[opt.text for opt in third_category_select.options]}")
@@ -367,14 +405,14 @@ class WorkingSeleniumAdPoster:
                                 print(f"✅ Selected first third category option: {third_category_select.first_selected_option.text}")
                             
                             # Take snapshot after third category selection
-                            self.take_snapshot("After Third Category Selection")
+                    
                             
                             # Wait for vehicle-specific fields to appear
                             print("🚗 Waiting for vehicle-specific fields to appear...")
                             time.sleep(5)
                             
                             # Take snapshot to see what fields appeared
-                            self.take_snapshot("After Waiting for Vehicle Fields")
+                    
                             
                             # Look for vehicle-specific fields
                             try:
@@ -441,7 +479,7 @@ class WorkingSeleniumAdPoster:
         
         try:
             # Take snapshot before filling details
-            self.take_snapshot("Before Filling Form Details")
+    
             
             # Fill title
             title_field = self.driver.find_element(By.NAME, "title")
@@ -456,16 +494,25 @@ class WorkingSeleniumAdPoster:
             price_field.send_keys(price_str)
             print("✅ Filled price")
             
-            # Fill description using JavaScript (required due to interactability issues)
-            description_script = """
-                var descField = document.querySelector('textarea[name*="description"]');
-                if (descField) {
-                    descField.value = arguments[0];
-                    descField.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-            """
-            self.driver.execute_script(description_script, self.ad_details.get('description', ''))
-            print("✅ Filled description")
+            # Fill description - handle TinyMCE editor
+            try:
+                # First try to fill the hidden textarea directly
+                desc_textarea = self.driver.find_element(By.NAME, "description")
+                desc_textarea.clear()
+                desc_textarea.send_keys(self.ad_details.get('description', ''))
+                print("✅ Filled description")
+            except Exception as e:
+                # Fallback: use JavaScript to fill TinyMCE editor
+                description_script = """
+                    var descField = document.querySelector('textarea[name="description"]');
+                    if (descField) {
+                        descField.value = arguments[0];
+                        descField.dispatchEvent(new Event('input', { bubbles: true }));
+                        descField.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                """
+                self.driver.execute_script(description_script, self.ad_details.get('description', ''))
+                print("✅ Filled description via JavaScript")
             
             # Fill address
             address_field = self.driver.find_element(By.NAME, "address")
@@ -488,7 +535,7 @@ class WorkingSeleniumAdPoster:
             time.sleep(3)
             
             # Take snapshot to see what fields appeared
-            self.take_snapshot("After Looking for Vehicle Fields")
+    
             
             # Look for vehicle-specific fields using the correct exf_* names
             try:
@@ -521,48 +568,48 @@ class WorkingSeleniumAdPoster:
                             # Fill based on field name
                             if field_name == 'exf_8':  # Trim / Edition
                                 field.clear()
-                                field.send_keys('Standard')
-                                print("✅ Filled Trim/Edition: Standard")
+                                field.send_keys(self.ad_details.get('trim', 'Standard'))
+                                print(f"✅ Filled Trim/Edition: {self.ad_details.get('trim', 'Standard')}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_9':  # Transmission
                                 field.clear()
-                                field.send_keys('Automatic')
-                                print("✅ Filled Transmission: Automatic")
+                                field.send_keys(self.ad_details.get('transmission', 'Automatic'))
+                                print(f"✅ Filled Transmission: {self.ad_details.get('transmission', 'Automatic')}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_10':  # Registration year
                                 field.clear()
-                                field.send_keys('2020')
-                                print("✅ Filled Registration year: 2020")
+                                field.send_keys(self.ad_details.get('registration_year', '2020'))
+                                print(f"✅ Filled Registration year: {self.ad_details.get('registration_year', '2020')}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_11':  # Fuel type
                                 field.clear()
-                                field.send_keys('Petrol')
-                                print("✅ Filled Fuel type: Petrol")
+                                field.send_keys(self.ad_details.get('fuel_type', 'Petrol'))
+                                print(f"✅ Filled Fuel type: {self.ad_details.get('fuel_type', 'Petrol')}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_12':  # Kilometers run
                                 field.clear()
-                                field.send_keys('50000')
-                                print("✅ Filled Kilometers run: 50000")
+                                field.send_keys(self.ad_details.get('kilometers_driven', '50000'))
+                                print(f"✅ Filled Kilometers run: {self.ad_details.get('kilometers_driven', '50000')}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_13':  # Model
                                 field.clear()
-                                field.send_keys('Sedan')
-                                print("✅ Filled Model: Sedan")
+                                field.send_keys(self.ad_details.get('model', 'Sedan'))
+                                print(f"✅ Filled Model: {self.ad_details.get('model', 'Sedan')}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_14':  # Year of Manufacture
                                 field.clear()
-                                field.send_keys('2005')
-                                print("✅ Filled Year of Manufacture: 2005")
+                                field.send_keys(self.ad_details.get('year_of_production', '2005'))
+                                print(f"✅ Filled Year of Manufacture: {self.ad_details.get('year_of_production', '2005')}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_15':  # Condition
                                 field.clear()
-                                field.send_keys('Good')
-                                print("✅ Filled Condition: Good")
+                                field.send_keys(self.ad_details.get('condition', 'Good'))
+                                print(f"✅ Filled Condition: {self.ad_details.get('condition', 'Good')}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_16':  # Body type
                                 field.clear()
-                                field.send_keys('Sedan')
-                                print("✅ Filled Body type: Sedan")
+                                field.send_keys(self.ad_details.get('body_type', 'Sedan'))
+                                print(f"✅ Filled Body type: {self.ad_details.get('body_type', 'Sedan')}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_17':  # Price Final Status
                                 field.clear()
@@ -571,38 +618,49 @@ class WorkingSeleniumAdPoster:
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_18':  # Engine capacity
                                 field.clear()
-                                field.send_keys('1.5L')
-                                print("✅ Filled Engine capacity: 1.5L")
+                                field.send_keys(self.ad_details.get('engine_capacity', '1.5L'))
+                                print(f"✅ Filled Engine capacity: {self.ad_details.get('engine_capacity', '1.5L')}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_19':  # Posted on
                                 field.clear()
-                                field.send_keys('2024')
-                                print("✅ Filled Posted on: 2024")
+                                posted_date = self.ad_details.get('posted_on', '2024')
+                                if isinstance(posted_date, str) and 'T' in posted_date:
+                                    posted_date = posted_date.split('T')[0]
+                                field.send_keys(posted_date)
+                                print(f"✅ Filled Posted on: {posted_date}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_20':  # Sellers Name
                                 field.clear()
-                                field.send_keys('Car Seller')
-                                print("✅ Filled Sellers Name: Car Seller")
+                                field.send_keys(self.ad_details.get('seller_name', 'Car Seller'))
+                                print(f"✅ Filled Sellers Name: {self.ad_details.get('seller_name', 'Car Seller')}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_21':  # Contact Numbers (textarea)
                                 field.clear()
-                                field.send_keys('+880 1234567890')
-                                print("✅ Filled Contact Numbers: +880 1234567890")
+                                contact_numbers = self.ad_details.get('contact', [])
+                                if contact_numbers and isinstance(contact_numbers, list):
+                                    contact_str = ', '.join([str(contact.get('number', '')) for contact in contact_numbers])
+                                else:
+                                    contact_str = '+880 1234567890'
+                                field.send_keys(contact_str)
+                                print(f"✅ Filled Contact Numbers: {contact_str}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_22':  # Source Link
                                 field.clear()
-                                field.send_keys('https://example.com')
-                                print("✅ Filled Source Link: https://example.com")
+                                field.send_keys(self.ad_details.get('url', 'https://example.com'))
+                                print(f"✅ Filled Source Link: {self.ad_details.get('url', 'https://example.com')}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_23':  # Year of Production
                                 field.clear()
-                                field.send_keys('2005')
-                                print("✅ Filled Year of Production: 2005")
+                                field.send_keys(self.ad_details.get('year_of_production', '2005'))
+                                print(f"✅ Filled Year of Production: {self.ad_details.get('year_of_production', '2005')}")
                                 vehicle_fields_filled += 1
                             elif field_name == 'exf_24':  # Version
                                 field.clear()
-                                field.send_keys('F')
-                                print("✅ Filled Version: F")
+                                version = self.ad_details.get('version', 'F')
+                                if version is None:
+                                    version = 'F'
+                                field.send_keys(version)
+                                print(f"✅ Filled Version: {version}")
                                 vehicle_fields_filled += 1
                     except Exception as e:
                         print(f"⚠️  Error filling field {field_name}: {e}")
@@ -617,7 +675,7 @@ class WorkingSeleniumAdPoster:
                 print(f"⚠️  Error handling vehicle fields: {e}")
             
             # Take snapshot after filling all details
-            self.take_snapshot("After Filling All Form Details")
+    
             
             return True
             
@@ -631,7 +689,7 @@ class WorkingSeleniumAdPoster:
         
         try:
             # Take snapshot before image upload
-            self.take_snapshot("Before Image Upload")
+    
             
             # Look for file upload input
             file_inputs = self.driver.find_elements(By.CSS_SELECTOR, "input[type='file']")
@@ -681,7 +739,7 @@ class WorkingSeleniumAdPoster:
                         print(f"❌ Failed to download image {i+1}")
             
             # Take snapshot after image upload
-            self.take_snapshot("After Image Upload")
+    
             
             return True
             
@@ -695,7 +753,7 @@ class WorkingSeleniumAdPoster:
         
         try:
             # Take snapshot before agreeing to terms
-            self.take_snapshot("Before Agreeing to Terms")
+    
             
             # Look for privacy/terms checkbox
             privacy_checkbox = None
@@ -747,7 +805,7 @@ class WorkingSeleniumAdPoster:
                     print("✅ Terms and conditions already agreed to")
                 
                 # Take snapshot after agreeing to terms
-                self.take_snapshot("After Agreeing to Terms")
+        
                 return True
             else:
                 print("⚠️  No terms and conditions checkbox found - continuing anyway")
@@ -768,7 +826,7 @@ class WorkingSeleniumAdPoster:
             time.sleep(5)
             
             # Take snapshot of user's ads page
-            self.take_snapshot("User Ads Page")
+    
             
             # Check if we're still logged in
             if "login" in self.driver.current_url.lower():
@@ -818,7 +876,7 @@ class WorkingSeleniumAdPoster:
         
         try:
             # Take snapshot before submission
-            self.take_snapshot("Before Form Submission")
+    
             
             # Find submit button - try multiple strategies
             submit_button = None
@@ -873,7 +931,7 @@ class WorkingSeleniumAdPoster:
                 time.sleep(1)
                 
                 # Take snapshot right before clicking submit
-                self.take_snapshot("Right Before Submit Click")
+        
                 
                 # Click the submit button
                 submit_button.click()
@@ -884,7 +942,7 @@ class WorkingSeleniumAdPoster:
                 time.sleep(15)
                 
                 # Take snapshot after submission
-                self.take_snapshot("After Form Submission")
+        
                 
                 # Check the result with multiple strategies
                 current_url = self.driver.current_url
@@ -948,9 +1006,9 @@ class WorkingSeleniumAdPoster:
                 print("❌ Failed to load ad details. Exiting.")
                 return False
             
-            # Step 3: Login to site
-            if not self.login_to_site():
-                print("❌ Login failed. Exiting.")
+            # Step 3: Try to use saved session, otherwise login
+            if not self.try_session_reuse():
+                print("❌ Session reuse failed. Exiting.")
                 return False
             
             # Step 4: Navigate to post ad page
